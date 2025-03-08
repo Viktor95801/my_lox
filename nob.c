@@ -32,10 +32,13 @@ void SOURCE_FILES(Nob_Cmd *cmd) {
     for (size_t i = 0; i < dir_paths.count; i++) {
         const char* file = dir_paths.items[i];
         if (!(strncmp(file, ".", 1) == 0 || strncmp(file, "..", 2) == 0)) {
-            char to_append[256] = SRC_FOULDER;
-            strncat_s(to_append, 256, dir_paths.items[i], 255);
-            nob_cmd_append(cmd, to_append);
-            nob_log(NOB_INFO, "\t%s", dir_paths.items[i]);
+            int len = strlen(file) - 1;
+            if (strncmp(file + (len-1), ".c", 2) == 0) /*after this piece of code I feel a genius*/ {
+                char to_append[256] = SRC_FOULDER;
+                strncat_s(to_append, 256, dir_paths.items[i], 256);
+                nob_cmd_append(cmd, to_append);
+                nob_log(NOB_INFO, "\t%s (ends with .c)", dir_paths.items[i]);
+            }
         }
     }
     nob_log(NOB_INFO, "END "SRC_FOULDER" listing\n");
