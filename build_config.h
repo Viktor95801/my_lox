@@ -6,7 +6,7 @@
 #define DEV 1
 #define EXTRA_WARNING 1
 
-#define COMPILER "gcc"
+#define COMPILER "clang"
 
 #define BUILD_FOULDER "build/"
 #define APP_NAME "lox"
