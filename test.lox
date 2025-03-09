@@ -1,0 +1,10 @@
+// this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <=>= == // operators
+"I don't know man" // string
+// those are numbers
+9012
+0.1
+310293.1293
+
+if else /* this is another coment */ return nil
