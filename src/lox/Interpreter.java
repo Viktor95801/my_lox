@@ -27,31 +27,48 @@ class Interpreter implements Expr.Visitor<Object>
         }
     }
 
+    @SuppressWarnings("incomplete-switch")
     @Override
     public Object visitBinaryExpr(Expr.Binary expr) throws FailedRuntime {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
 
         switch (expr.operator.type) {
-                    case EQUAL_EQUAL ->   { return isEqual(left, right); }
-                    case BANG_EQUAL ->    { return !isEqual(left, right); }
-                    case LESS_EQUAL ->    { checkNumberOperands(expr.operator, left, right); return (double) left <= (double) right; }
-                    case GREATER_EQUAL -> { checkNumberOperands(expr.operator, left, right); return (double) left >= (double) right; }
-                    case GREATER ->       { checkNumberOperands(expr.operator, left, right); return (double) left > (double) right; }
-                    case LESS ->          { checkNumberOperands(expr.operator, left, right); return (double) left < (double) right; }
-                    case MINUS ->         { checkNumberOperands(expr.operator, left, right); return (double) left - (double) right; }
-                    case SLASH ->         { checkNumberOperands(expr.operator, left, right); return (double) left / (double) right; }
-                    case STAR ->          { checkNumberOperands(expr.operator, left, right); return (double) left * (double) right; }
-                    case PLUS -> {
-                        if (left instanceof Double && right instanceof Double) {
-                            return (double) left + (double) right;
-                        } else if (left instanceof String && right instanceof String) {
-                            return (String) left + (String) right;
-                        }
-                        throw new FailedRuntime(expr.operator, "Operands must be two numbers or two strings.");
+            case EQUAL_EQUAL ->   { return isEqual(left, right); }
+            case BANG_EQUAL ->    { return !isEqual(left, right); }
+            case SLASH ->         { checkNumberOperands(expr.operator, left, right); handle_division(left, right, expr.operator); }
+            case LESS_EQUAL ->    { checkNumberOperands(expr.operator, left, right); return (double) left <= (double) right; }
+            case GREATER_EQUAL -> { checkNumberOperands(expr.operator, left, right); return (double) left >= (double) right; }
+            case GREATER ->       { checkNumberOperands(expr.operator, left, right); return (double) left > (double) right; }
+            case LESS ->          { checkNumberOperands(expr.operator, left, right); return (double) left < (double) right; }
+            case MINUS ->         { checkNumberOperands(expr.operator, left, right); return (double) left - (double) right; }
+            case STAR ->          { checkNumberOperands(expr.operator, left, right); return (double) left * (double) right; }
+            case PLUS -> {
+                if (left instanceof Double && right instanceof Double) {
+                    return (double) left + (double) right;
+                } else if (left instanceof String || right instanceof String) {
+                    if (left instanceof Double) {
+                        String str = left.toString();
+                        if (str.endsWith(".0")) str = str.substring(0, str.length() - 2);
+                        return str + right;
                     }
-                    default -> { return null; /* unreachable */}
+                    if (right instanceof Double) {
+                        String str = right.toString();
+                        if (str.endsWith(".0")) str = str.substring(0, str.length() - 2);
+                        return left + str;
+                    }
+                }
+                throw new FailedRuntime(expr.operator, "Operands must be two numbers or two strings.");
+            }
         }
+        return null;
+    }
+
+    private Object handle_division(Object left, Object right, Token operator) throws FailedRuntime {
+        if ((double)right == 0.0) {
+            throw new FailedRuntime(operator, "Division by zero is not allowed.");
+        }
+        return (double)left / (double)right;
     }
 
     private boolean isEqual(Object a, Object b) {
