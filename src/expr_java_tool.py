@@ -42,7 +42,6 @@ def define_tree(out_dir: str, base_name: str, types: list[str], tab_spc: int = 4
     
     with open(path, "w") as f:
         f.write("package lox;\n\n")
-        f.write("import java.util.List;\n\n")
         f.write("abstract class " + base_name + "\n{\n")
         
         define_visitor(base_name, types, f)

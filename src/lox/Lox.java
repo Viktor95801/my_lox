@@ -10,8 +10,9 @@ import java.util.List;
 
 public class Lox
 {
-
+    private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -29,9 +30,8 @@ public class Lox
         run(new String(bytes, Charset.defaultCharset()));
 
         // Indicate an error in the exit code.
-        if (hadError) {
-            System.exit(65);
-        }
+        if (hadError) System.exit(65);
+        if (hadRuntimeError) System.exit(70);
     }
 
     private static void runPrompt() throws IOException {
@@ -39,12 +39,18 @@ public class Lox
         BufferedReader reader = new BufferedReader(input);
 
         for (;;) {
-            System.out.print("> ");
+            System.out.print("(\"help();\") > ");
             String line = reader.readLine();
             if (line == null) {
                 break;
             }
-            run(line);
+            boolean run = true;
+            switch (line) {
+                case "quit();" -> { System.exit(0); run = false; }
+                case "help();" -> { System.out.println("Available commands: quit(), help()") ; run = false; }
+            }
+            if (run) run(line);
+            run = true;
 
             // Reset error state on each new prompt.
             hadError = false;
@@ -61,6 +67,7 @@ public class Lox
         if (hadError) return;
 
         System.out.println(new AstPrinter().print(expression));
+        interpreter.interpret(expression);
     }
 
     static void error(int line, String message) {
@@ -81,5 +88,10 @@ public class Lox
         } else {
             report(token.line, " at '" + token.lexeme + "'", message);
         }
+    }
+
+    static void runtimeError(FailedRuntime error) {
+        System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+        hadRuntimeError = true;
     }
 }

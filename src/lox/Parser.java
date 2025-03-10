@@ -76,6 +76,7 @@ class Parser {
         throw error(peek(), message);
     }
 
+    @SuppressWarnings("incomplete-switch")
     private void synchronize() {
         advance();
 
@@ -144,15 +145,13 @@ class Parser {
     }
 
     private Expr unary() throws ParseError {
-        Expr expr = primary();
-
         if (match(BANG, MINUS)) {
             Token operator = previous();
             Expr right = unary();
-            expr = new Expr.Unary(operator, right);
+            return new Expr.Unary(operator, right);
         }
 
-        return expr;
+        return primary();
     }
 
     private Expr primary() throws ParseError {
