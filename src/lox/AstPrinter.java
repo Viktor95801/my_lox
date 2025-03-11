@@ -1,12 +1,35 @@
 package lox;
 
-class AstPrinter implements Expr.Visitor<String>
+import java.util.List;
+
+class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
 {
 
-    String print(Expr expr) {
-        return expr.accept(this);
+    String print(List<Stmt> stmts) {
+        StringBuilder sb = new StringBuilder();
+        for (Stmt stmt : stmts) {
+            sb.append(stmt.accept(this) + " | ");
+        }
+        sb.delete(sb.length() - 3, sb.length());
+        return sb.toString();
     }
 
+    // statements
+    @Override
+    public String visitExpressionStmt(Stmt.Expression stmt) {
+        return parenthesize(stmt.expression.accept(this) + ";");
+    }
+
+    @Override
+    public String visitPrintStmt(Stmt.Print stmt) {
+        return parenthesize("print " + stmt.expression.accept(this) + ";");
+    }
+
+    @Override
+    public String visitQuitStmt(Stmt.Quit stmt) {
+        return parenthesize("quit " + stmt.value.accept(this) + ";");
+    }
+    // expressions
     @Override
     public String visitBinaryExpr(Expr.Binary expr) {
         return parenthesize(expr.operator.lexeme,

@@ -58,15 +58,16 @@ def define_tree(out_dir: str, base_name: str, types: list[str], tab_spc: int = 4
         
         f.write("}\n")
 
-def types() -> list[str]:
+def types1() -> list[str]:
     return ["Literal  : Object value","Grouping : Expr expression","Unary    : Token operator, Expr right","Binary   : Expr left, Token operator, Expr right"]
-
+def types2() -> list[str]:
+    return ["Expression : Expr expression", "Print : Expr expression", "Quit : Expr value, Token quit"]
 def main(args: list[str]) -> int:
     if len(args) != 1:
         print("Usage: expr_java_tool.py <output_path>")
         return 1
     output_path: str = args[0]
-    define_tree(output_path, "Expr", types())
+    define_tree(output_path, "Stmt", types2())
 
 if __name__ == "__main__":
     args: list[str] = sys.argv[1:]

@@ -2,10 +2,12 @@
 package lox;
 
 import java.util.List;
+import java.util.ArrayList;
 import static lox.TokenType.*;
 
 
-class Parser {
+class Parser
+{
 
     static class ParseError extends Exception {
     }
@@ -13,12 +15,13 @@ class Parser {
     private final List<Token> tokens;
     private int current = 0;
 
-    Expr parse() {
-        try {
-            return expression();
-        } catch (ParseError error) {
-            return null;
+    List<Stmt> parse() throws ParseError {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(statement());
         }
+
+        return statements;
     }
 
     Parser(List<Token> tokens) {
@@ -92,6 +95,31 @@ class Parser {
     }
 
     // implementation
+    
+    // statement handlers
+    private Stmt printStatement() throws ParseError {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+    private Stmt quitStatement() throws ParseError {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        if (!(value instanceof Expr.Literal)) throw error(peek(), "Exit code must be a number.");
+        return new Stmt.Quit(value, peek());
+    }
+    private Stmt expressionStatement() throws ParseError {
+        Expr expr = expression();
+        consume(SEMICOLON, "Expect ';' after expression.");
+        return new Stmt.Expression(expr);
+    }
+
+    private Stmt statement() throws ParseError {
+        if (match(PRINT)) return printStatement();
+        if (match(QUIT)) return quitStatement();
+
+        return expressionStatement();
+    }
     private Expr expression() throws ParseError {
         return equality();
     }

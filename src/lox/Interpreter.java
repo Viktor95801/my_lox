@@ -1,8 +1,32 @@
 package lox;
 
-class Interpreter implements Expr.Visitor<Object>
+import java.util.List;
+
+class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 {
 
+    // implements Stmt.Visitor
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) throws FailedRuntime {
+        evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) throws FailedRuntime {
+        Object value = evaluate(stmt.expression);
+        System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
+    public Void visitQuitStmt(Stmt.Quit stmt) throws FailedRuntime {
+        Object value = evaluate(stmt.value);
+        if (!(value instanceof Double)) throw new FailedRuntime(stmt.quit, "Exit code must be a number.");
+        System.exit(((Double)value).intValue());
+        return null;
+    }
+    // implements Expr.Visitor
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
         return expr.value;
@@ -113,10 +137,13 @@ class Interpreter implements Expr.Visitor<Object>
         return object.toString();
     }
 
-    public void interpret(Expr expression) throws FailedRuntime {
+    private void execute(Stmt statement) {
+        statement.accept(this);
+    }
+
+    public void interpret(List<Stmt> statements) throws FailedRuntime {
         try {
-            Object value = evaluate(expression);
-            System.out.println(stringify(value));
+            for (Stmt stmt : statements) execute(stmt);
         } catch (FailedRuntime error) {
             Lox.runtimeError(error);
         }

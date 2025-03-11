@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import lox.Parser.ParseError;
+
 public class Lox
 {
     private static final Interpreter interpreter = new Interpreter();
@@ -45,10 +47,7 @@ public class Lox
                 break;
             }
             boolean run = true;
-            switch (line) {
-                case "quit();" -> { System.exit(0); run = false; }
-                case "help();" -> { System.out.println("Available commands: quit(), help()") ; run = false; }
-            }
+            
             if (run) run(line);
             run = true;
 
@@ -61,13 +60,18 @@ public class Lox
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
-
+        
+        List<Stmt> programAST = null;
+        try {
+            programAST = parser.parse();
+        } catch (ParseError e) {
+            hadError = true;
+        }
         // Stop if there was a syntax error.
         if (hadError) return;
 
-        System.out.println(new AstPrinter().print(expression));
-        interpreter.interpret(expression);
+        System.out.println(new AstPrinter().print(programAST));
+        interpreter.interpret(programAST);
     }
 
     static void error(int line, String message) {
