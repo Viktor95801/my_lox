@@ -1,6 +1,7 @@
 import os
 import sys
 import io
+import re
 
 def define_type(base_name:str, class_name: str, fields: str, f: io.TextIOWrapper, tab_spc: int = 4) -> None:
     tab: str = " " * tab_spc
@@ -41,8 +42,8 @@ def define_tree(out_dir: str, base_name: str, types: list[str], tab_spc: int = 4
     path: str = os.path.join(out_dir, base_name + ".java")
     
     with open(path, "w") as f:
-        f.write("package lox;\n\n")
-        f.write("abstract class " + base_name + "\n{\n")
+        f.write("package lox;\n\nimport java.util.List;\n\n")
+        f.write("@SuppressWarnings(\"unused\")\nabstract class " + base_name + "\n{\n")
         
         define_visitor(base_name, types, f)
         
@@ -58,17 +59,17 @@ def define_tree(out_dir: str, base_name: str, types: list[str], tab_spc: int = 4
         
         f.write("}\n")
 
-def types1() -> list[str]:
-    return ["Literal  : Object value","Grouping : Expr expression","Unary    : Token operator, Expr right","Binary   : Expr left, Token operator, Expr right","Variable : Token name", "Assign : Token name, Expr value"]
-def types2() -> list[str]:
-    return ["Expression : Expr expression", "Print : Expr expression", "Quit : Expr value, Token quit", "Var : Token name, Expr initializer"]
+def types_expr() -> list[str]:
+    return ["Literal : Object value","Grouping : Expr expression","Unary : Token operator, Expr right","Binary   : Expr left, Token operator, Expr right","Variable : Token name", "Assign : Token name, Expr value"]
+def types_stmt() -> list[str]:
+    return ["Delete : Token name" ,"Block : List<Stmt> statements", "Expression : Expr expression", "Print : Expr expression", "Quit : Expr value, Token quit", "Var : Token name, Expr initializer"]
 def main(args: list[str]) -> int:
     if len(args) != 1:
         print("Usage: expr_java_tool.py <output_path>")
         return 1
     output_path: str = args[0]
-    define_tree(output_path, "Expr", types1())
-    define_tree(output_path, "Stmt", types2())
+    define_tree(output_path, "Expr", types_expr())
+    define_tree(output_path, "Stmt", types_stmt())
 
 if __name__ == "__main__":
     args: list[str] = sys.argv[1:]

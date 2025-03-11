@@ -16,12 +16,7 @@ class Parser
     private int current = 0;
 
     List<Stmt> parse() throws ParseError {
-        List<Stmt> statements = new ArrayList<>();
-        while (!isAtEnd()) {
-            statements.add(declaration());
-        }
-
-        return statements;
+        return program();
     }
 
     Parser(List<Token> tokens) {
@@ -99,36 +94,60 @@ class Parser
     // statement handlers
     private Stmt printStatement() throws ParseError {
         Expr value = expression();
-        consume(SEMICOLON, "Expect ';' after value.");
+        consume(SEMICOLON, "Expect ';' after value. (Not " + peek().type + ")");
         return new Stmt.Print(value);
     }
     private Stmt quitStatement() throws ParseError {
         Expr expr = expression();
-        consume(SEMICOLON, "Expect ';' after value.");
+        consume(SEMICOLON, "Expect ';' after value. (Not " + peek().type + ")");
         if (expr instanceof Expr.Literal) {
-            if (((Expr.Literal)expr).value == null) throw error(peek(), "Exit code must be some sort of number. (Not \"nil\").");
+            if (((Expr.Literal)expr).value == null) error(peek(), "Exit code must be some sort of number. (Not \"nil\").");
         }
         return new Stmt.Quit(expr, peek());
     }
 
     private Stmt varDeclaration() throws ParseError {
-        Token name = consume(IDENTIFIER, "Expect variable name.");
+        Token name = consume(IDENTIFIER, "Expect variable name. (Not " + peek().type + ")");
 
         Expr initializer = null;
         if (match(EQUAL)) {
             initializer = expression();
         }
-        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        consume(SEMICOLON, "Expect ';' after variable declaration. (Not " + peek().type + ")");
         return new Stmt.Var(name, initializer);
     }
 
     private Stmt expressionStatement() throws ParseError {
         Expr expr = expression();
-        consume(SEMICOLON, "Expect ';' after expression.");
+        consume(SEMICOLON, "Expect ';' after expression. (Not " + peek().type + ")");
         return new Stmt.Expression(expr);
     }
 
+    private Stmt delStatement() throws ParseError {
+        Token name = consume(IDENTIFIER, "Cannot delete non-identifier value. ("+peek().type+")");
+        consume(SEMICOLON, "Expect ';' after expression. (Not " + peek().type + ")");
+        return new Stmt.Delete(name);
+    }
+    private List<Stmt> block() throws ParseError {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(RIGHT_BRACE, "Expect '}' after block. (Not " + peek().type + ")");
+        return statements;
+    }
     // parser
+
+    private List<Stmt> program() throws ParseError {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(declaration());
+        }
+        return statements;
+    }
+    // stmt
     private Stmt declaration() throws ParseError {
         try {
             if (match(VAR)) return varDeclaration();
@@ -142,15 +161,35 @@ class Parser
     private Stmt statement() throws ParseError {
         if (match(PRINT)) return printStatement();
         if (match(QUIT)) return quitStatement();
+        if (match(DEL)) return delStatement();
+        if (match(LEFT_BRACE)) return new Stmt.Block(block());
 
         return expressionStatement();
     }
 
     // expr handling
+    
     private Expr expression() throws ParseError {
-        return equality();
+        return assignment();
     }
 
+    private Expr assignment() throws ParseError {
+        Expr expr = equality();
+
+        if (match(EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable)expr).name;
+                return new Expr.Assign(name, value);
+            }
+            error(equals, "Invalid assignment target.");
+        }  
+        
+        return expr;
+    }
+    
     private Expr equality() throws ParseError {
         Expr expr = comparison();
 
@@ -226,7 +265,7 @@ class Parser
 
         if (match(LEFT_PAREN)) {
             Expr expr = expression();
-            consume(RIGHT_PAREN, "Expect ')' after expression.");
+            consume(RIGHT_PAREN, "Expect ')' after expression. (Not " + peek().type + ")");
             return new Expr.Grouping(expr);
         }
 

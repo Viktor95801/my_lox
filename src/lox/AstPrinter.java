@@ -4,17 +4,21 @@ import java.util.List;
 
 class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
 {
-
     String print(List<Stmt> stmts) {
         StringBuilder sb = new StringBuilder();
         for (Stmt stmt : stmts) {
             sb.append(stmt.accept(this) + " | ");
         }
-        sb.delete(sb.length() - 3, sb.length());
-        return sb.toString();
+        if (sb.length() > 3) sb.delete(sb.length() - 3, sb.length());
+        return sb.toString() + ((sb.length() > 0) ? "\n" : "");
     }
 
     // statements
+    @Override
+    public String visitBlockStmt(Stmt.Block stmt) {
+        return curlyieBlock("block", stmt.statements);
+    }
+
     @Override
     public String visitExpressionStmt(Stmt.Expression stmt) {
         return parenthesize(stmt.expression.accept(this) + ";");
@@ -27,6 +31,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
 
     @Override
     public String visitVarStmt(Stmt.Var stmt) {
+        if (stmt.initializer == null) return parenthesize("var " + stmt.name.lexeme + ";");
         return parenthesize("var " + stmt.name.lexeme + " = " + stmt.initializer.accept(this) + ";");
     }
 
@@ -35,7 +40,15 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
         return parenthesize("quit " + stmt.value.accept(this) + ";");
     }
 
+    @Override
+    public String visitDeleteStmt(Stmt.Delete stmt) {
+        return parenthesize("del " + stmt.name.lexeme + ";");
+    }
     // expressions
+    @Override public String visitAssignExpr(Expr.Assign expr) {
+        return parenthesize(expr.name.lexeme + "<-" + expr.value.accept(this));
+    }
+
     @Override
     public String visitVariableExpr(Expr.Variable expr) {
         return parenthesize(expr.name.lexeme);
@@ -65,6 +78,14 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
         return parenthesize(expr.operator.lexeme, expr.right);
     }
 
+    private String curlyieBlock(String name, List<Stmt> block) {
+        StringBuilder sb = new StringBuilder();
+        for (Stmt stmt : block) {
+            sb.append(stmt.accept(this) + " | ");
+        }
+        if (sb.length() > 3) sb.delete(sb.length() - 3, sb.length());
+        return "(" +name + " " + "{" + sb.toString() + "}" + ")";
+    }
     private String parenthesize(String name, Expr... exprs) {
         StringBuilder sb = new StringBuilder();
 

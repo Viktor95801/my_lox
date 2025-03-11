@@ -4,18 +4,20 @@ import java.util.List;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 {
-
+    private class NotInitializedType{}
+    boolean repl;
     private Environment globals = new Environment();
     // implements Stmt.Visitor
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) throws FailedRuntime {
-        evaluate(stmt.expression);
+        Object value = evaluate(stmt.expression);
+        if (repl) System.out.println(stringify(value));
         return null;
     }
 
     @Override
     public Void visitVarStmt(Stmt.Var stmt) throws FailedRuntime {
-        Object value = null;
+        Object value = new NotInitializedType();
         if (stmt.initializer != null) value = evaluate(stmt.initializer);
         globals.define(stmt.name, value);
         return null;
@@ -33,12 +35,33 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         Object value = evaluate(stmt.value);
         if (value instanceof Boolean) value = (boolean)value ? 1.0 : 0.0;
         else if (value == null) throw new FailedRuntime(stmt.quit, "Exit code must be some sort of number. (Not \"nil\")");
+        else if (value instanceof String) throw new FailedRuntime(stmt.quit, "Exit code must be some sort of number. (Not str '" + value+ "')");
         System.exit(((Double)value).intValue());
+        return null;
+    }
+
+    @Override
+    public Void visitDeleteStmt(Stmt.Delete stmt) throws FailedRuntime {
+        globals.del(stmt.name);
+        return null;
+    }
+
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) throws FailedRuntime {
+        executeBlock(stmt.statements, new Environment(globals));
         return null;
     }
     // implements Expr.Visitor
     @Override
+    public Object visitAssignExpr(Expr.Assign expr) throws FailedRuntime {
+        Object value = evaluate(expr.value);
+        globals.assign(expr.name, value);
+        return value;
+    }
+
+    @Override
     public Object visitVariableExpr(Expr.Variable expr) throws FailedRuntime {
+        if (globals.get(expr.name) instanceof NotInitializedType) throw new FailedRuntime(expr.name, "Variable '" + expr.name.lexeme + "' has not been initialized yet, can't use it's value.");
         return globals.get(expr.name);
     }
 
@@ -103,6 +126,20 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         return null;
     }
 
+    // helpers
+    void executeBlock(List<Stmt> statements, Environment environment) throws FailedRuntime {
+        Environment previous = this.globals;
+        try {
+            this.globals = environment;
+
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        } finally {
+            this.globals = previous;
+        }
+    }
+
     private Object handle_division(Object left, Object right, Token operator) throws FailedRuntime {
         if ((double)right == 0.0) {
             throw new FailedRuntime(operator, "Division by zero is not allowed.");
@@ -162,5 +199,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         } catch (FailedRuntime error) {
             Lox.runtimeError(error);
         }
+    }
+    public void setRepl(boolean repl) {
+        this.repl = repl;
     }
 }

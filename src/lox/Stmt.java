@@ -1,12 +1,37 @@
 package lox;
 
+import java.util.List;
+
+@SuppressWarnings("unused")
 abstract class Stmt
 {
     interface Visitor<R> {
+        R visitDeleteStmt(Delete stmt);
+        R visitBlockStmt(Block stmt);
         R visitExpressionStmt(Expression stmt);
         R visitPrintStmt(Print stmt);
         R visitQuitStmt(Quit stmt);
         R visitVarStmt(Var stmt);
+    }
+    static class Delete extends Stmt {
+        Delete(Token name) {
+            this.name = name;
+        }
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitDeleteStmt(this);
+        }
+        final Token name;
+    }
+    static class Block extends Stmt {
+        Block(List<Stmt> statements) {
+            this.statements = statements;
+        }
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitBlockStmt(this);
+        }
+        final List<Stmt> statements;
     }
     static class Expression extends Stmt {
         Expression(Expr expression) {

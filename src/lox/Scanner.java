@@ -32,6 +32,7 @@ class Scanner
         keywords.put("or", OR);
         keywords.put("print", PRINT);
         keywords.put("quit", QUIT);
+        keywords.put("del", DEL);
         keywords.put("return", RETURN);
         keywords.put("super", SUPER);
         keywords.put("this", THIS);

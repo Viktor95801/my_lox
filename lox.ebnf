@@ -6,11 +6,16 @@ varDecl ::= "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement ::= exprStmt
             | printStmt 
-            | quitStmt ;
+            | quitStmt
+            | delStmt
+            | block ;
+
+block ::= "{" declaration* "}" ;
 
 exprStmt    :: = expression ";" ;
 printStmt   ::= "print" expression ";" ;
 quitStmt    ::= "quit" NUMBER ";" ;
+delStmt     ::= "del" IDENTIFIER ";" ;
 
 expression  ::= equality ;
 assignment  ::= IDENTIFIER "=" expression ";" ;

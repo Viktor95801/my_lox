@@ -28,6 +28,7 @@ public class Lox
     }
 
     private static void runFile(String path) throws IOException {
+        interpreter.setRepl(false);
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         run(new String(bytes, Charset.defaultCharset()));
 
@@ -39,17 +40,41 @@ public class Lox
     private static void runPrompt() throws IOException {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
+        StringBuilder to_run = new StringBuilder();
+        interpreter.setRepl(true);
 
+        System.out.println("jLox v0.0.1 - alpha https://github.com/Viktor95801/my_lox (original https://www.craftinginterpreters.com/ by Robert Nystrom)");
+        System.out.println("Type 'help' for help.");
+
+        
+        String prompt_append = "";
         for (;;) {
-            System.out.print("> ");
+            System.out.print(prompt_append+"> ");
             String line = reader.readLine();
             if (line == null) {
                 break;
             }
-            boolean run = true;
+            if (line.equals("help")) {
+                System.out.println("Commands:");
+                System.out.println("  help - print this help message");
+                System.out.println("  quit - you can use the interpreter specific quit keyword to also quit the REPL");
+                System.out.println("REPL specific usage:");
+                System.out.println("  ... - continue to the next line without running it");
+                continue;
+            }
             
-            if (run) run(line);
-            run = true;
+            if (!(line.endsWith("..."))) {
+                if (to_run.length() > 0) {
+                    to_run.append(line);
+                    run(to_run.toString());
+                    to_run.setLength(0);
+                } else run(line);
+                prompt_append = "";
+            } else {
+                prompt_append = "--- ";
+                to_run.append(line.substring(0, line.length() - "...".length()));
+            }
+
 
             // Reset error state on each new prompt.
             hadError = false;
@@ -70,11 +95,11 @@ public class Lox
         // Stop if there was a syntax error.
         if (hadError) return;
 
-        System.out.println(new AstPrinter().print(programAST));
+        System.out.print(new AstPrinter().print(programAST));
         interpreter.interpret(programAST);
     }
 
-    static void error(int line, String message) {
+    public static void error(int line, String message) {
         report(line, "", message);
     }
 
