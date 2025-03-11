@@ -5,10 +5,19 @@ import java.util.List;
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 {
 
+    private Environment globals = new Environment();
     // implements Stmt.Visitor
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) throws FailedRuntime {
         evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) throws FailedRuntime {
+        Object value = null;
+        if (stmt.initializer != null) value = evaluate(stmt.initializer);
+        globals.define(stmt.name, value);
         return null;
     }
 
@@ -27,6 +36,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         return null;
     }
     // implements Expr.Visitor
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) throws FailedRuntime {
+        return globals.get(expr.name);
+    }
+
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
         return expr.value;

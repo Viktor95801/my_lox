@@ -18,7 +18,7 @@ class Parser
     List<Stmt> parse() throws ParseError {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            statements.add(statement());
+            statements.add(declaration());
         }
 
         return statements;
@@ -108,10 +108,33 @@ class Parser
         if (!(value instanceof Expr.Literal)) throw error(peek(), "Exit code must be a number.");
         return new Stmt.Quit(value, peek());
     }
+
+    private Stmt varDeclaration() throws ParseError {
+        Token name = consume(IDENTIFIER, "Expect variable name.");
+
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        return new Stmt.Var(name, initializer);
+    }
+
     private Stmt expressionStatement() throws ParseError {
         Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
+    }
+
+    // parser
+    private Stmt declaration() throws ParseError {
+        try {
+            if (match(VAR)) return varDeclaration();
+            return statement();
+        } catch (ParseError e) {
+            synchronize();
+            return null;
+        }
     }
 
     private Stmt statement() throws ParseError {
@@ -120,6 +143,8 @@ class Parser
 
         return expressionStatement();
     }
+
+    // expr handling
     private Expr expression() throws ParseError {
         return equality();
     }
@@ -203,6 +228,9 @@ class Parser
             return new Expr.Grouping(expr);
         }
 
+        if (match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
+        }
         throw error(peek(), "Expected an expression.");
     }
 }

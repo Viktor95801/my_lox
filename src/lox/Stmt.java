@@ -6,6 +6,7 @@ abstract class Stmt
         R visitExpressionStmt(Expression stmt);
         R visitPrintStmt(Print stmt);
         R visitQuitStmt(Quit stmt);
+        R visitVarStmt(Var stmt);
     }
     static class Expression extends Stmt {
         Expression(Expr expression) {
@@ -38,6 +39,18 @@ abstract class Stmt
         }
         final Expr value;
         final Token quit;
+    }
+    static class Var extends Stmt {
+        Var(Token name, Expr initializer) {
+            this.name = name;
+            this.initializer = initializer;
+        }
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitVarStmt(this);
+        }
+        final Token name;
+        final Expr initializer;
     }
     abstract <R> R accept(Visitor<R> visitor);
 }

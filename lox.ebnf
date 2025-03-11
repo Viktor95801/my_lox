@@ -1,11 +1,19 @@
-program ::= statement* EOF ;
+program ::= declaration* EOF ;
+
+declaration ::= varDecl | statement ;
+
+varDecl ::= "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement ::= exprStmt
-            | printStmt ;
+            | printStmt 
+            | quitStmt ;
 
 exprStmt    :: = expression ";" ;
 printStmt   ::= "print" expression ";" ;
+quitStmt    ::= "quit" NUMBER ";" ;
+
 expression  ::= equality ;
+assignment  ::= IDENTIFIER "=" expression ";" ;
 equality    ::= comparison ( ( "!=" | "==" ) comparison )* ;
 comparison  ::= term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        ::= factor ( ( "-" | "+" ) factor )* ;
@@ -13,4 +21,4 @@ factor      ::= unary ( ( "/" | "*" ) unary )* ;
 unary       ::= ( "!" | "-" ) unary
                | primary ;
 primary     ::= NUMBER | STRING | "true" | "false" | "nil"
-               | "(" expression ")" ;
+               | "(" expression ")" | IDENTIFIER ;

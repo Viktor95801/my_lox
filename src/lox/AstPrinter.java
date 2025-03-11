@@ -26,10 +26,21 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
     }
 
     @Override
+    public String visitVarStmt(Stmt.Var stmt) {
+        return parenthesize("var " + stmt.name.lexeme + " = " + stmt.initializer.accept(this) + ";");
+    }
+
+    @Override
     public String visitQuitStmt(Stmt.Quit stmt) {
         return parenthesize("quit " + stmt.value.accept(this) + ";");
     }
+
     // expressions
+    @Override
+    public String visitVariableExpr(Expr.Variable expr) {
+        return parenthesize(expr.name.lexeme);
+    }
+
     @Override
     public String visitBinaryExpr(Expr.Binary expr) {
         return parenthesize(expr.operator.lexeme,
