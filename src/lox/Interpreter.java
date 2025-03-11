@@ -31,7 +31,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     @Override
     public Void visitQuitStmt(Stmt.Quit stmt) throws FailedRuntime {
         Object value = evaluate(stmt.value);
-        if (!(value instanceof Double)) throw new FailedRuntime(stmt.quit, "Exit code must be a number.");
+        if (value instanceof Boolean) value = (boolean)value ? 1.0 : 0.0;
+        else if (value == null) throw new FailedRuntime(stmt.quit, "Exit code must be some sort of number. (Not \"nil\")");
         System.exit(((Double)value).intValue());
         return null;
     }

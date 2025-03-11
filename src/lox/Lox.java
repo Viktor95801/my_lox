@@ -41,7 +41,7 @@ public class Lox
         BufferedReader reader = new BufferedReader(input);
 
         for (;;) {
-            System.out.print("(\"help();\") > ");
+            System.out.print("> ");
             String line = reader.readLine();
             if (line == null) {
                 break;

@@ -103,10 +103,12 @@ class Parser
         return new Stmt.Print(value);
     }
     private Stmt quitStatement() throws ParseError {
-        Expr value = expression();
+        Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after value.");
-        if (!(value instanceof Expr.Literal)) throw error(peek(), "Exit code must be a number.");
-        return new Stmt.Quit(value, peek());
+        if (expr instanceof Expr.Literal) {
+            if (((Expr.Literal)expr).value == null) throw error(peek(), "Exit code must be some sort of number. (Not \"nil\").");
+        }
+        return new Stmt.Quit(expr, peek());
     }
 
     private Stmt varDeclaration() throws ParseError {

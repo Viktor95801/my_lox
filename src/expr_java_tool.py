@@ -59,7 +59,7 @@ def define_tree(out_dir: str, base_name: str, types: list[str], tab_spc: int = 4
         f.write("}\n")
 
 def types1() -> list[str]:
-    return ["Literal  : Object value","Grouping : Expr expression","Unary    : Token operator, Expr right","Binary   : Expr left, Token operator, Expr right","Variable : Token name"]
+    return ["Literal  : Object value","Grouping : Expr expression","Unary    : Token operator, Expr right","Binary   : Expr left, Token operator, Expr right","Variable : Token name", "Assign : Token name, Expr value"]
 def types2() -> list[str]:
     return ["Expression : Expr expression", "Print : Expr expression", "Quit : Expr value, Token quit", "Var : Token name, Expr initializer"]
 def main(args: list[str]) -> int:
