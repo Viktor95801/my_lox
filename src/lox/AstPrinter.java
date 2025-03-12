@@ -14,6 +14,14 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
     }
 
     // statements
+    @Override public String visitIfStmt(Stmt.If stmt) {
+        return parenthesize("if " + stmt.condition.accept(this) + curlyieBlock("then", List.of(stmt.thenBranch)) + ((stmt.elseBranch != null) ? curlyieBlock("else", List.of(stmt.elseBranch)) : ""));
+    }
+
+    @Override public String visitWhileStmt(Stmt.While stmt) {
+        return parenthesize("while " + stmt.condition.accept(this) + curlyieBlock("do", List.of(stmt.body)));
+    }
+
     @Override
     public String visitBlockStmt(Stmt.Block stmt) {
         return curlyieBlock("block", stmt.statements);
@@ -45,7 +53,13 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
         return parenthesize("del " + stmt.name.lexeme + ";");
     }
     // expressions
-    @Override public String visitAssignExpr(Expr.Assign expr) {
+    @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return parenthesize(expr.operator.lexeme,
+                            expr.left, expr.right);
+    }
+    @Override
+    public String visitAssignExpr(Expr.Assign expr) {
         return parenthesize(expr.name.lexeme + "<-" + expr.value.accept(this));
     }
 
@@ -70,7 +84,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
         if (expr.value == null) {
             return "nil";
         }
-        return expr.value.toString();
+        return fmtSTR(expr.value.toString());
     }
 
     @Override
@@ -92,10 +106,16 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
         sb.append("(").append(name);
         for (Expr expr : exprs) {
             sb.append(" ");
-            sb.append(expr.accept(this));
+            sb.append(fmtSTR(expr.accept(this)));
         }
         sb.append(")");
 
         return sb.toString();
+    }
+
+    private String fmtSTR(String str) {
+        if (str.endsWith(".0")) str = str.substring(0, str.length() - 2);
+        if (str.length() == 0) return "'emptSTR'";
+        return str;
     }
 }

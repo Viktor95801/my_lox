@@ -11,7 +11,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) throws FailedRuntime {
         Object value = evaluate(stmt.expression);
-        if (repl) System.out.println(stringify(value));
+        if (repl && !(stmt.expression instanceof Expr.Assign)) System.out.println(stringify(value));
         return null;
     }
 
@@ -51,7 +51,30 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         executeBlock(stmt.statements, new Environment(globals));
         return null;
     }
+
+    @Override
+    public Void visitIfStmt(Stmt.If stmt) throws FailedRuntime {
+        if (isTruthy(evaluate(stmt.condition))) execute(stmt.thenBranch);
+        else if (stmt.elseBranch != null) execute(stmt.elseBranch);
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body);
+        }
+        return null;
+    }
     // implements Expr.Visitor
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) throws FailedRuntime {
+        Object left = evaluate(expr.left);
+        if (expr.operator.type == TokenType.OR && isTruthy(left)) return left;
+        if (expr.operator.type == TokenType.AND && !isTruthy(left)) return left;
+        return evaluate(expr.right);
+    }
+
     @Override
     public Object visitAssignExpr(Expr.Assign expr) throws FailedRuntime {
         Object value = evaluate(expr.value);
@@ -153,9 +176,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
         return a.equals(b);
     }
     private boolean isTruthy(Object object) {
-        if (object == null) {
-            return false;
-        }
+        if (object == null) return false;
+        if (object instanceof String) return ((String)object).length() > 0;
         if (object instanceof Double && (double)object == 0.0) return false;
         if (object instanceof Boolean) {
             return (boolean)object;

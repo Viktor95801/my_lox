@@ -3,6 +3,7 @@ package lox;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import static lox.TokenType.*;
 
 
@@ -74,7 +75,6 @@ class Parser
         throw error(peek(), message);
     }
 
-    @SuppressWarnings("incomplete-switch")
     private void synchronize() {
         advance();
 
@@ -83,6 +83,7 @@ class Parser
 
             switch (peek().type) {
                 case CLASS, FUN, VAR, FOR, IF, WHILE, PRINT, RETURN -> { return; }
+                default -> { break; }
             }
 
             advance();
@@ -128,6 +129,7 @@ class Parser
         consume(SEMICOLON, "Expect ';' after expression. (Not " + peek().type + ")");
         return new Stmt.Delete(name);
     }
+
     private List<Stmt> block() throws ParseError {
         List<Stmt> statements = new ArrayList<>();
 
@@ -138,6 +140,72 @@ class Parser
         consume(RIGHT_BRACE, "Expect '}' after block. (Not " + peek().type + ")");
         return statements;
     }
+
+    private Stmt ifStatement() throws ParseError {
+        consume(LEFT_PAREN, "Expect '(' after 'if'. (Not " + peek().type + ")");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition expression. (Not " + peek().type + ")");
+        Stmt thenBranch = statement();
+        Stmt elseBranch = null;
+        if (match(ELSE)) elseBranch = statement();
+        return new Stmt.If(condition, thenBranch, elseBranch);
+    }
+
+    private Stmt whileStatement() throws ParseError {
+        consume(LEFT_PAREN, "Expect '(' after 'while' loop. (Not " + peek().type + ")");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition expression. (Not " + peek().type + ")");
+        Stmt body = statement();
+
+        return new Stmt.While(condition, body);
+    }
+
+    private Stmt forStatement() throws ParseError {
+        consume(LEFT_PAREN, "Expect '(' after 'for' loop. (Not " + peek().type + ")");
+        
+        Stmt i;
+        if (match(SEMICOLON)) {
+            i = null;
+        } else if (match(VAR)) {
+            i = varDeclaration();
+        } else {
+            i = expressionStatement();
+        }
+
+        Expr cond = null;
+        if (!check(SEMICOLON)) {
+            cond = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after for loop condition. (Not " + peek().type + ")");
+
+        Expr inc = null;
+        if (!check(RIGHT_PAREN)) {
+            inc = expression();
+        }
+        consume(RIGHT_PAREN, "Expect ')' after 'for' loop. (Not " + peek().type + ")");
+
+        Stmt body = statement();
+
+        if (inc != null) {
+            body = new Stmt.Block(Arrays.asList(
+                body,
+                new Stmt.Expression(inc) // makes a ExprStmt from Expression
+            )); // creates a block and appends the increment stmt to it
+        }
+
+        if (cond == null) cond = new Expr.Literal(true);
+        body = new Stmt.While(cond, body);
+
+        if (i != null) {
+            body = new Stmt.Block(Arrays.asList(
+                i, // appends the declaration to the start of the body
+                body
+            ));
+        }
+
+        return body;
+    }
+
     // parser
 
     private List<Stmt> program() throws ParseError {
@@ -146,7 +214,8 @@ class Parser
             statements.add(declaration());
         }
         return statements;
-    }
+    }    
+
     // stmt
     private Stmt declaration() throws ParseError {
         try {
@@ -155,10 +224,15 @@ class Parser
         } catch (ParseError e) {
             synchronize();
             return null;
-        }
-    }
+        }    
+    }    
+
+
 
     private Stmt statement() throws ParseError {
+        if (match(IF)) return ifStatement();
+        if (match(WHILE)) return whileStatement();
+        if (match(FOR)) return forStatement();
         if (match(PRINT)) return printStatement();
         if (match(QUIT)) return quitStatement();
         if (match(DEL)) return delStatement();
@@ -174,7 +248,7 @@ class Parser
     }
 
     private Expr assignment() throws ParseError {
-        Expr expr = equality();
+        Expr expr = or();
 
         if (match(EQUAL)) {
             Token equals = previous();
@@ -190,6 +264,28 @@ class Parser
         return expr;
     }
     
+    private Expr or() throws ParseError {
+        Expr expr = and();
+
+        while (match(OR)) {
+            Token operator = previous();
+            Expr right = and();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr and() throws ParseError {
+        Expr expr = equality();
+
+        while (match(AND)) {
+            Token operator = previous();
+            Expr right = equality();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
     private Expr equality() throws ParseError {
         Expr expr = comparison();
 

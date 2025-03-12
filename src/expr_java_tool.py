@@ -60,9 +60,9 @@ def define_tree(out_dir: str, base_name: str, types: list[str], tab_spc: int = 4
         f.write("}\n")
 
 def types_expr() -> list[str]:
-    return ["Literal : Object value","Grouping : Expr expression","Unary : Token operator, Expr right","Binary   : Expr left, Token operator, Expr right","Variable : Token name", "Assign : Token name, Expr value"]
+    return ["Logical : Expr left, Token operator, Expr right", "Literal : Object value","Grouping : Expr expression","Unary : Token operator, Expr right","Binary   : Expr left, Token operator, Expr right","Variable : Token name", "Assign : Token name, Expr value"]
 def types_stmt() -> list[str]:
-    return ["Delete : Token name" ,"Block : List<Stmt> statements", "Expression : Expr expression", "Print : Expr expression", "Quit : Expr value, Token quit", "Var : Token name, Expr initializer"]
+    return ["If : Expr condition, Stmt thenBranch, Stmt elseBranch", "Delete : Token name" ,"Block : List<Stmt> statements", "Expression : Expr expression", "Print : Expr expression", "Quit : Expr value, Token quit", "Var : Token name, Expr initializer", "While : Expr condition, Stmt body"]
 def main(args: list[str]) -> int:
     if len(args) != 1:
         print("Usage: expr_java_tool.py <output_path>")

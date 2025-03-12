@@ -5,6 +5,8 @@ declaration ::= varDecl | statement ;
 varDecl ::= "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement ::= exprStmt
+            | ifStmt
+            | whileStmt
             | printStmt 
             | quitStmt
             | delStmt
@@ -13,12 +15,19 @@ statement ::= exprStmt
 block ::= "{" declaration* "}" ;
 
 exprStmt    :: = expression ";" ;
+ifStmt      ::= "if" "(" expression ")" statement ( "else" statement )? ;
+whileStmt   ::= "while" "(" expression ")" statement ;
+forStmt     ::= "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+
 printStmt   ::= "print" expression ";" ;
 quitStmt    ::= "quit" NUMBER ";" ;
 delStmt     ::= "del" IDENTIFIER ";" ;
 
-expression  ::= equality ;
-assignment  ::= IDENTIFIER "=" expression ";" ;
+expression     → assignment ;
+assignment     → IDENTIFIER "=" assignment
+               | logic_or ;
+logic_or       → logic_and ( "or" logic_and )* ;
+logic_and      → equality ( "and" equality )* ;
 equality    ::= comparison ( ( "!=" | "==" ) comparison )* ;
 comparison  ::= term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        ::= factor ( ( "-" | "+" ) factor )* ;
