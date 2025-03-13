@@ -206,6 +206,22 @@ class Parser
         return body;
     }
 
+    // expr helper
+
+    private Expr finishCall(Expr callee) throws ParseError {
+        List<Expr> arguments = new ArrayList<>();
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (arguments.size() >= 255) error(peek(), "Cannot have more than 255 arguments.");
+                arguments.add(expression());
+            } while (match(COMMA));
+        }
+
+        Token paren = consume(RIGHT_PAREN, "Expect ')' after arguments. (Not " + peek().type + ")");
+        return new Expr.Call(callee, paren, arguments);
+    }
+
     // parser
 
     private List<Stmt> program() throws ParseError {
@@ -341,7 +357,20 @@ class Parser
             return new Expr.Unary(operator, right);
         }
 
-        return primary();
+        return call();
+    }
+
+    private Expr call() throws ParseError {
+        Expr expr = primary();
+
+        while (true) {
+            if (match(LEFT_PAREN)) {
+                expr = finishCall(expr);
+            } else {
+                break;
+            }
+        }
+        return expr;
     }
 
     private Expr primary() throws ParseError {

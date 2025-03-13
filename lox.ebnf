@@ -1,8 +1,12 @@
 program ::= declaration* EOF ;
 
-declaration ::= varDecl | statement ;
+declaration ::= funDecl | varDecl | statement ;
 
 varDecl ::= "var" IDENTIFIER ( "=" expression )? ";" ;
+funDecl ::= "fun" function ;
+
+function ::= IDENTIFIER "(" params? ")" block ;
+params   ::= IDENTIFIER ( "," IDENTIFIER )* ;
 
 statement ::= exprStmt
             | ifStmt
@@ -34,5 +38,8 @@ term        ::= factor ( ( "-" | "+" ) factor )* ;
 factor      ::= unary ( ( "/" | "*" ) unary )* ;
 unary       ::= ( "!" | "-" ) unary
                | primary ;
+call        ::= primary ( "(" arguments? ")" )* ;
 primary     ::= NUMBER | STRING | "true" | "false" | "nil"
                | "(" expression ")" | IDENTIFIER ;
+
+arguments ::= expression ( "," expression )* ;

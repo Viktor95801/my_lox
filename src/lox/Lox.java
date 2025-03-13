@@ -1,3 +1,6 @@
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 package lox;
 
 import java.io.BufferedReader;
@@ -12,10 +15,11 @@ import lox.Parser.ParseError;
 
 public class Lox
 {
-    private static final Interpreter interpreter = new Interpreter();
+    private static Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
-
+    
+    
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
             System.out.println("Usage: jlox [script]");
@@ -26,26 +30,26 @@ public class Lox
             runPrompt();
         }
     }
-
+    
     private static void runFile(String path) throws IOException {
         interpreter.setRepl(false);
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         run(new String(bytes, Charset.defaultCharset()));
-
+        
         // Indicate an error in the exit code.
-        if (hadError) System.exit(65);
-        if (hadRuntimeError) System.exit(70);
+        if (hadError) System.exit(1);
+        if (hadRuntimeError) System.exit(1);
     }
-
+    
     private static void runPrompt() throws IOException {
+        interpreter.setRepl(true);
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
         StringBuilder to_run = new StringBuilder();
-        interpreter.setRepl(true);
-
-        System.out.println("jLox v0.0.1 - alpha https://github.com/Viktor95801/my_lox (original https://www.craftinginterpreters.com/ by Robert Nystrom)");
+        
+        System.out.println("jLox v0.1.0 - beta https://github.com/Viktor95801/my_lox (original https://www.craftinginterpreters.com/ by Robert Nystrom)");
         System.out.println("Type 'help' for help.");
-
+        
         
         String prompt_append = "";
         for (;;) {
@@ -74,13 +78,13 @@ public class Lox
                 prompt_append = "--- ";
                 to_run.append(line.substring(0, line.length() - "...".length()));
             }
-
-
+            
+            
             // Reset error state on each new prompt.
             hadError = false;
         }
     }
-
+    
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
@@ -94,23 +98,23 @@ public class Lox
         }
         // Stop if there was a syntax error.
         if (hadError) return;
-
+        
         System.out.print(new AstPrinter().print(programAST));
         interpreter.interpret(programAST);
     }
-
+    
     public static void error(int line, String message) {
         report(line, "", message);
     }
-
+    
     private static void report(int line, String where, String message) {
         System.err.println(
-                "[line " + line + "] Error"
-                + where + ": "
-                + message);
+        "[line " + line + "] Error"
+        + where + ": "
+        + message);
         hadError = true;
     }
-
+    
     static void error(Token token, String message) {
         if (token.type == TokenType.EOF) {
             report(token.line, " at end", message);
@@ -118,9 +122,22 @@ public class Lox
             report(token.line, " at '" + token.lexeme + "'", message);
         }
     }
-
+    
+    static void nativeError(Environment.FailedNative error) {
+        System.err.println("Failed to create a native value (recommended restart): " + error.getMessage());
+        System.err.println("[info] The interpreter couldn't start and the code won't be able to run.");
+        restart_interpreter();
+    }
     static void runtimeError(FailedRuntime error) {
         System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
         hadRuntimeError = true;
+    }
+    
+    static void restart_interpreter() {
+        System.err.println("[info] Restarting the interpreter...");
+        boolean repl = interpreter.repl;
+        interpreter = new Interpreter();
+        interpreter.setRepl(repl);
+        System.err.println("[info] Interpreter restarted.");
     }
 }

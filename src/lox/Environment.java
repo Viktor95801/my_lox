@@ -5,6 +5,11 @@ import java.util.Map;
 
 public class Environment
 {
+    class FailedNative extends RuntimeException {
+        public FailedNative(String name, String message) {
+            super(name + ": " + message);
+        }
+    }
     final Environment enclosing;
     private Map<String, Object> values = new HashMap<>();
 
@@ -27,6 +32,12 @@ public class Environment
             throw new FailedRuntime(identifier, "Variable '" + identifier.lexeme + "' is already defined.");
         }
         values.put(identifier.lexeme, value);
+    }
+    void defineNative(String name, Object value) throws FailedNative {
+        if (values.containsKey(name)) {
+            throw new FailedNative(name, "Native '" + name + "' is already defined.");
+        }
+        values.put(name, value);
     }
     void assign(Token name, Object value) throws FailedRuntime {
         if (values.containsKey((name.lexeme))) {

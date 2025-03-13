@@ -92,6 +92,20 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String>
         return parenthesize(expr.operator.lexeme, expr.right);
     }
 
+    @Override
+    public String visitCallExpr(Expr.Call expr) {
+        return callieCallee(expr);
+    }
+
+
+    private String callieCallee(Expr.Call expr) {
+        StringBuilder sb = new StringBuilder();
+        for (Expr each : expr.arguments) {
+            sb.append(each.accept(this) + " | ");
+        }
+        if (sb.length() > 3) sb.delete(sb.length() - 3, sb.length());
+        return "(fn->" + expr.callee.accept(this) + ": (" + sb.toString() + ") )";
+    }
     private String curlyieBlock(String name, List<Stmt> block) {
         StringBuilder sb = new StringBuilder();
         for (Stmt stmt : block) {
